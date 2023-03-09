@@ -18,6 +18,7 @@ redis = get_redis_connection(
     password = redis_password,
     decode_responses = True
 )
+
 class Product(HashModel):
     name: str
     price: float
