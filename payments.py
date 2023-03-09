@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis_om import get_redis_connection, HashModel
 from credentials import *
+from starlette.requests import Request
+import requests
 
 app = FastAPI()
 
@@ -18,40 +20,21 @@ redis = get_redis_connection(
     password = redis_password,
     decode_responses = True
 )
-class Product(HashModel):
-    name: str
+
+class Order(HashModel):
+    product_id: str
     price: float
+    total: float
     quantity: int
+    status: str
     class Meta:
         database = redis
 
 
+@app.post("/orders")
+async def create(request: Request):
+    body = await request.json()
 
-@app.get("/products")
-def all():
-    return [format(pk) for pk in Product.all_pks()]
-
-def format(pk: str):
-    product = Product.get(pk)
-    return {
-        "id": product.pk,
-        "name": product.name,
-        "price": product.price,
-        "quantity": product.quantity
-    }
-
-
-@app.post("/products")
-def create(product: Product):
-    return product.save()
-
-@app.get("/products/{pk}")
-def get(pk: str):
-    return Product.get(pk)
-
-@app.delete("/products/{pk}")
-def delete(pk: str):
-    return Product.delete(pk)
-
-
-
+    req = requests.get('http://localhost:8080/products/%s' % body['id'])
+    
+    return req.json()
